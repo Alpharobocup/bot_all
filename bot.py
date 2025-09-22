@@ -165,22 +165,17 @@ def text_to_image(text, output="output.png", font_path="B.ttf"):
     return output
 
 
-# Barcode decode (pyzbar)
-from PIL import Image
-try:
-    from pyzbar.pyzbar import decode as zbar_decode
-except Exception:
-    zbar_decode = None
-
 from pyzbar.pyzbar import decode
 from PIL import Image
+import io
 
-def read_barcode(file_path):
-    img = Image.open(file_path)
+def read_barcode(file_bytes):
+    img = Image.open(io.BytesIO(file_bytes))
     data_list = decode(img)
     if data_list:
-        return data_list[0].data.decode("utf-8")
-    return None
+        return [d.data.decode("utf-8") for d in data_list]
+    return []
+
 
 
 # Aparat preview: just send URL back and Telegram will show preview (if allowed)
