@@ -112,7 +112,6 @@ scheduler.start()
 MENU_BUTTONS = [
     ("Aparat Video", "aparat"),
     ("Google Search", "gsearch"),
-    ("Barcode Read", "barcode"),
     ("Text → Image", "textimg"),
     ("Weather", "weather"),
     ("Currency/Gold", "money"),
@@ -165,16 +164,7 @@ def text_to_image(text, output="output.png", font_path="B.ttf"):
     return output
 
 
-from pyzbar.pyzbar import decode
-from PIL import Image
-import io
 
-def read_barcode(file_bytes):
-    img = Image.open(io.BytesIO(file_bytes))
-    data_list = decode(img)
-    if data_list:
-        return [d.data.decode("utf-8") for d in data_list]
-    return []
 
 
 
@@ -259,24 +249,7 @@ def handle_text(message):
     # fallback: if it's plain text, offer menu
     bot.send_message(cid, 'متن دریافت شد — از منو استفاده کنید یا /menu', reply_markup=make_menu())
 
-# Photo handler (for barcode and general images)
-@bot.message_handler(content_types=['photo'])
-def handle_photo(message):
-    # download highest quality photo
-    file_info = bot.get_file(message.photo[-1].file_id)
-    file_bytes = requests.get(f'https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}', timeout=15).content
-    # try barcode decode
-    decoded = read_barcode(file_bytes)
-    if decoded:
-        # send decoded results plus search links
-        for d in decoded:
-            bot.reply_to(message, f'بارکد خوانده شد: {d}\nجستجوی وب برای آن...')
-            links = google_search(d)
-            if links:
-                bot.send_message(message.chat.id, '\n'.join(links[:5]))
-        return
-    # else just ack
-    bot.reply_to(message, 'عکس دریافت شد. برای خواندن بارکد، از عکس بارکد استفاده کنید.')
+
 
 # Text -> image handler (user sends /img Your text...)
 @bot.message_handler(commands=['img'])
