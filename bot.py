@@ -254,7 +254,7 @@ def handle_text(message):
     # If previous message requested google search: we use a simple heuristic
     if text.startswith('/search '):
         q = text[len('/search '):].strip()
-        links = google_top_links(q)
+        links = google_search(q)
         if not links:
             bot.send_message(cid, 'نتیجه‌ای یافت نشد یا سرویس در دسترس نیست.')
         else:
@@ -271,12 +271,12 @@ def handle_photo(message):
     file_info = bot.get_file(message.photo[-1].file_id)
     file_bytes = requests.get(f'https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}', timeout=15).content
     # try barcode decode
-    decoded = decode_barcode_from_bytes(file_bytes)
+    decoded = read_barcode(file_bytes)
     if decoded:
         # send decoded results plus search links
         for d in decoded:
             bot.reply_to(message, f'بارکد خوانده شد: {d}\nجستجوی وب برای آن...')
-            links = google_top_links(d)
+            links = google_search(d)
             if links:
                 bot.send_message(message.chat.id, '\n'.join(links[:5]))
         return
@@ -288,7 +288,7 @@ def handle_photo(message):
 def cmd_img(message):
     try:
         content = message.text.split(' ',1)[1]
-        bio = text_to_image_bytes(content)
+        bio = text_to_image(content)
         bot.send_photo(message.chat.id, photo=bio)
     except Exception:
         bot.reply_to(message, 'مثال: /img متن شما')
