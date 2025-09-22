@@ -144,61 +144,26 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36'
 }
 
-def google_top_links(query, limit=5):
-    """Try to fetch top links from Google search result page. Fallback to Bing if needed."""
-    try:
-        q = requests.get('https://www.google.com/search', params={'q': query, 'num': limit}, headers=HEADERS, timeout=8)
-        soup = BeautifulSoup(q.text, 'html.parser')
-        links = []
-        for a in soup.select('a'):
-            href = a.get('href')
-            if href and href.startswith('/url?q='):
-                url = href.split('/url?q=')[1].split('&')[0]
-                if url.startswith('http'):
-                    links.append(url)
-            if len(links) >= limit:
-                break
-        if not links:
-            raise Exception('no links')
-        return links[:limit]
-    except Exception as e:
-        logger.warning('google search failed, trying bing')
-        try:
-            r = requests.get('https://www.bing.com/search', params={'q': query}, headers=HEADERS, timeout=8)
-            soup = BeautifulSoup(r.text, 'html.parser')
-            links = []
-            for li in soup.select('li.b_algo h2 a'):
-                links.append(li.get('href'))
-                if len(links) >= limit:
-                    break
-            return links
-        except Exception as e2:
-            logger.exception('bing fail')
-            return []
+from googlesearch import search
 
-# Text to image
-def text_to_image_bytes(text, width=1024, font_path=None):
-    # Basic font fallback
-    try:
-        if font_path and os.path.exists(font_path):
-            font = ImageFont.truetype(font_path, 40)
-        else:
-            font = ImageFont.load_default()
-    except Exception:
-        font = ImageFont.load_default()
-    lines = textwrap.wrap(text, width=40)
-    line_height = font.getsize('A')[1] + 8
-    img_h = max(200, line_height * (len(lines) + 1))
-    img = Image.new('RGB', (width, img_h), color=(255,255,255))
-    draw = ImageDraw.Draw(img)
-    y = 20
-    for line in lines:
-        draw.text((40, y), line, font=font, fill=(10,10,10))
-        y += line_height
-    bio = io.BytesIO()
-    img.save(bio, 'PNG')
-    bio.seek(0)
-    return bio
+def google_search(query, num_results=5):
+    results = []
+    for url in search(query, num_results=num_results):
+        results.append(url)
+    return results
+
+
+from PIL import Image, ImageDraw, ImageFont
+
+def text_to_image(text, output="output.png", font_path="B.ttf"):
+    img = Image.new("RGB", (600, 200), color=(255, 255, 255))
+    d = ImageDraw.Draw(img)
+    font = ImageFont.truetype(font_path, 24)
+    w, h = d.textsize(text, font=font)
+    d.text(((600-w)/2, (200-h)/2), text, fill=(0,0,0), font=font)
+    img.save(output)
+    return output
+
 
 # Barcode decode (pyzbar)
 from PIL import Image
@@ -207,12 +172,16 @@ try:
 except Exception:
     zbar_decode = None
 
-def decode_barcode_from_bytes(image_bytes):
-    if not zbar_decode:
-        return None
-    img = Image.open(io.BytesIO(image_bytes))
-    dec = zbar_decode(img)
-    return [d.data.decode('utf-8') for d in dec]
+from pyzbar.pyzbar import decode
+from PIL import Image
+
+def read_barcode(file_path):
+    img = Image.open(file_path)
+    data_list = decode(img)
+    if data_list:
+        return data_list[0].data.decode("utf-8")
+    return None
+
 
 # Aparat preview: just send URL back and Telegram will show preview (if allowed)
 
