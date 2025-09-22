@@ -1,0 +1,10 @@
+flask
+pytelegrambotapi
+requests
+beautifulsoup4
+lxml
+pillow
+qrcode
+pyzbar
+opencv-python-headless
+reportlab
