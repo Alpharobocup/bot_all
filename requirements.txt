@@ -6,5 +6,6 @@ lxml
 pillow
 qrcode
 pyzbar
+apscheduler
 opencv-python-headless
 reportlab
