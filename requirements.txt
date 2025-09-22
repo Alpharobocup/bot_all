@@ -9,3 +9,5 @@ pyzbar
 apscheduler
 opencv-python-headless
 reportlab
+googlesearch-python
+
